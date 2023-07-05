@@ -25,22 +25,61 @@ else()
    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
 endif()
 
+
+
+find_package(Eigen3 REQUIRED NO_MODULE)
+message("EIGEN3_INCLUDE_DIR:" ${EIGEN3_INCLUDE_DIR})
+# message("EIGEN3_LIBS:" ${EIGEN3_LIBS})
+find_package(OpenCV 3)
+if(NOT OpenCV_FOUND)
+   find_package(OpenCV 4)
+   if(NOT OpenCV_FOUND)
+      message(FATAL_ERROR "OpenCV not found.")
+   endif()
+endif()
+message("OpenCV_INCLUDE_DIRS:" ${OpenCV_INCLUDE_DIRS})
+# message("EIGEN3_LIBS:" ${EIGEN3_LIBS})
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
+${EIGEN3_INCLUDE_DIR}
+${OpenCV_INCLUDE_DIRS}
 )
+
+
 
 add_library(STATIC_TESTLIB STATIC
 src/TestFunction.cc
 )
 add_library(TESTLIB SHARED
 src/TestFunction.cc
+src/ExtractAndMatch.cc
 )
-
+target_link_libraries(TESTLIB 
+${OpenCV_LIBS}
+)
 add_executable(test 
 test.cc
 )
-
+add_executable(eigentest
+EigenTest.cc
+)
+add_executable(LinearSolver 
+LinearSolver.cc
+)
 target_link_libraries(test 
 TESTLIB
+) 
+add_executable(OpenCVTest
+OpenCVTest.cc 
+)
+target_link_libraries(OpenCVTest
+ TESTLIB 
+)
+
+add_executable(test1
+test1.cc
+)
+target_link_libraries(test1
+${OpenCV_LIBS}
 )
