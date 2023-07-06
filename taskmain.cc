@@ -4,8 +4,9 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include <fstream>
-#include "include/TestFunction.h"
-#include "include/ExtractAndMatch.h"
+#include "include/utils.h"
+#include "include/extractandmatch.h"
+#include "include/ceresBA.h"
 using namespace std;
 
 bool readAndInverse(string figure_path){
@@ -142,18 +143,31 @@ int main(int argc, char const *argv[])
     string path = "/home/xreal/xreal/two_image_pose_estimation/";
     
     int featureCount = 1000;  // 特征点数量
-    double ransacThreshold = 1.5;  // RANSAC阈值
+    double ransacThreshold = 0.6;  // RANSAC阈值
 
     featureMatchingRANSAC(undistortedImage1, undistortedImage2, keypoints1, keypoints2, matches, matchesRANSAC, featureCount, ransacThreshold);
 
     // drawMatchesRANSAC(undistortedImage1, keypoints1, undistortedImage2, keypoints2, matches, matchesRANSAC);
-
-    solvePose(keypoints1, keypoints2, matches, newCameraMatrix);
+    cv::Mat R, t, essential_matrix;
+    solvePoseOpenCV(keypoints1, keypoints2, matchesRANSAC, newCameraMatrix, R, t, essential_matrix);
+    
     // cv::imwrite(path + "1403637188088318976_undistortedImage.jpg", undistortedImage);
     // cv::imwrite(path + "1403637188088318976_undistortedImage1.jpg", undistortedImage1);
     // cv::imshow("undistortedImage", undistortedImage1);
     // cv::imshow("undistortedImage1", undistortedImage2);
     // cv::waitKey(0);
+    vector<Eigen::Vector3d> points;
+    triangulation(keypoints1, keypoints2, matchesRANSAC, newCameraMatrix, R, t, points);
+    vector<cv::Point2f> points1;
+    vector<cv::Point2f> points2;
 
+    for ( int i = 0; i < ( int ) matches.size(); i++ )
+    {
+        points1.push_back ( keypoints1[matches[i].queryIdx].pt );
+        points2.push_back ( keypoints2[matches[i].trainIdx].pt );
+    }
+    cv::Mat R0 = cv::Mat::eye(3,3, CV_32F);
+    cv::Mat t0 = cv::Mat::zeros(3,1, CV_32F);
+    optimization(points1, points2, R0, t0, R, t);
     return 0;
 }

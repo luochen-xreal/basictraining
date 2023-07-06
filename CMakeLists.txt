@@ -30,6 +30,7 @@ endif()
 find_package(Eigen3 REQUIRED NO_MODULE)
 message("EIGEN3_INCLUDE_DIR:" ${EIGEN3_INCLUDE_DIR})
 # message("EIGEN3_LIBS:" ${EIGEN3_LIBS})
+find_package(Ceres REQUIRED)
 find_package(OpenCV 3)
 if(NOT OpenCV_FOUND)
    find_package(OpenCV 4)
@@ -44,16 +45,17 @@ ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
 ${EIGEN3_INCLUDE_DIR}
 ${OpenCV_INCLUDE_DIRS}
+${CERES_INCLUDE_DIRS}
 )
 
 
 
 add_library(STATIC_TESTLIB STATIC
-src/TestFunction.cc
+src/utils.cc
 )
 add_library(TESTLIB SHARED
-src/TestFunction.cc
-src/ExtractAndMatch.cc
+src/utils.cc
+src/extractandmatch.cc
 )
 target_link_libraries(TESTLIB 
 ${OpenCV_LIBS}
@@ -61,19 +63,23 @@ ${OpenCV_LIBS}
 add_executable(test 
 test.cc
 )
+
 add_executable(eigentest
 EigenTest.cc
 )
+
 add_executable(LinearSolver 
 LinearSolver.cc
 )
+
+
 target_link_libraries(test 
 TESTLIB
 ) 
-add_executable(OpenCVTest
-OpenCVTest.cc 
+add_executable(main
+taskmain.cc 
 )
-target_link_libraries(OpenCVTest
+target_link_libraries(main
  TESTLIB 
 )
 
