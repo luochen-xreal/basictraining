@@ -20,22 +20,39 @@ void eightPointMethod(std::vector<cv::KeyPoint>& keypoints1,
 }
 void solvePoseOpenCV(std::vector<cv::KeyPoint>& keypoints1, 
                 std::vector<cv::KeyPoint>& keypoints2, 
+                std::vector<cv::KeyPoint>& keypoints1_inlier,
+                std::vector<cv::KeyPoint>& keypoints2_inlier,
                 std::vector<cv::DMatch>& matches, 
                 const cv::Mat& CameraMatrix, cv::Mat& R, cv::Mat& t, cv::Mat& essential_matrix){
     
     vector<Point2f> points1;
     vector<Point2f> points2;
-
+    
     for ( int i = 0; i < ( int ) matches.size(); i++ )
     {
         points1.push_back ( keypoints1[matches[i].queryIdx].pt );
         points2.push_back ( keypoints2[matches[i].trainIdx].pt );
     }
     //-- 计算本质矩阵
-    
-    essential_matrix = findEssentialMat ( points1, points2, CameraMatrix);
-    cout<<"essential_matrix is "<<endl<< essential_matrix<<endl;
-    recoverPose ( essential_matrix, points1, points2, CameraMatrix, R, t);
+    cv::Mat mask;
+    essential_matrix = findEssentialMat ( points1, points2, CameraMatrix, 8, 0.9989999999999999991, 1.0, mask);
+    cout<<"essential_matrix is "<< endl << essential_matrix << endl;
+    int inlier = recoverPose ( essential_matrix, points1, points2, CameraMatrix, R, t, mask);
+    cout << "mask size = " << mask.rows << endl;
+    for(size_t i = 0; i < matches.size(); i++){
+        // cout << mask.at<uchar>(i, 0) << endl;
+        if(mask.at<uchar>(i, 0) == 1.0){
+            
+            keypoints1_inlier.push_back(keypoints1[matches[i].queryIdx]);
+            keypoints2_inlier.push_back(keypoints2[matches[i].trainIdx]);
+        }
+    }
+    // cout << "mask = " << endl << mask << endl;
+    cout << "points size = " << points1.size() << endl;
+    cout << "keypoints1_inlier size = " << keypoints1_inlier.size() << endl;
+    cout << "inlier size = " << inlier << endl;
+    R.convertTo(R, CV_32F);
+    t.convertTo(t, CV_32F);
     cout<<"R is "<<endl<<R<<endl;
     cout<<"t is "<<endl<<t<<endl;
     
@@ -171,7 +188,7 @@ void solvePose(std::vector<cv::KeyPoint>& keypoints1,
     // std::cout << "t2=" << std::endl << t2 << std::endl;
     Eigen::Matrix3f t_x;
     t_x << 0, -t1(2), t1(1),t1(2),0, -t1(0),-t1(1),t1(0),0;
-    for (int i = 0; i < matches.size(); ++i) {
+    for (size_t i = 0; i < matches.size(); ++i) {
         cv::Point2f kp1 = keypoints1[matches[i].queryIdx].pt;
         cv::Point2f kp2 = keypoints1[matches[i].trainIdx].pt;
         Eigen::Vector3f p1, p2;
@@ -229,22 +246,21 @@ void solvePose(std::vector<cv::KeyPoint>& keypoints1,
 
 
 void triangulation(std::vector<cv::KeyPoint>& keypoints1, 
-                std::vector<cv::KeyPoint>& keypoints2, 
-                std::vector<cv::DMatch>& matches, 
+                std::vector<cv::KeyPoint>& keypoints2,  
                 const cv::Mat CameraMatrix, const cv::Mat& R, const cv::Mat& t, vector<Eigen::Vector3d> &points){
     cv::Mat T1 = (cv::Mat_<float>(3, 4) <<  1, 0, 0, 0,
                                             0, 1, 0, 0,
                                             0, 0, 1, 0);
-    cv::Mat T2 = (cv::Mat_<float>(3, 4) <<  R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2), t.at<double>(0, 0),
-                                            R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2), t.at<double>(1, 0),
-                                            R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2), t.at<double>(2, 0));
+    cv::Mat T2 = (cv::Mat_<float>(3, 4) <<  R.at<float>(0, 0), R.at<float>(0, 1), R.at<float>(0, 2), t.at<float>(0, 0),
+                                            R.at<float>(1, 0), R.at<float>(1, 1), R.at<float>(1, 2), t.at<float>(1, 0),
+                                            R.at<float>(2, 0), R.at<float>(2, 1), R.at<float>(2, 2), t.at<float>(2, 0));
     vector<cv::Point2f> points1;
     vector<cv::Point2f> points2;
 
-    for ( int i = 0; i < ( int ) matches.size(); i++ )
+    for ( int i = 0; i < ( int ) keypoints1.size(); i++ )
     {
-        points1.push_back ( pixel2cam(keypoints1[matches[i].queryIdx].pt, CameraMatrix) );
-        points2.push_back ( pixel2cam(keypoints2[matches[i].trainIdx].pt, CameraMatrix) );
+        points1.push_back ( pixel2cam(keypoints1[i].pt, CameraMatrix) );
+        points2.push_back ( pixel2cam(keypoints2[i].pt, CameraMatrix) );
 
     }
     // cout << R.type() << endl;
@@ -266,7 +282,7 @@ void triangulation(std::vector<cv::KeyPoint>& keypoints1,
             x.at<float>(1, 0),
             x.at<float>(2, 0));
         points.push_back(p);
-        cout << "p:" << p << endl;
+        // cout << "p:" << p << endl;
     }
 }
 
@@ -278,3 +294,23 @@ cv::Point2f pixel2cam(const cv::Point2f& p,const cv::Mat& K){
       (p.y - K.at<float>(1, 2)) / K.at<float>(1, 1)
     );
 }   
+cv::Point2f point2pixel(cv::Mat point, cv::Mat K, cv::Mat R, cv::Mat t){
+    cv::Mat p = R * point + t;
+    p = p / p.at<float>(2);
+    p = K * p;
+    // cout << "p :" << p << endl;
+    return cv::Point2f(p.at<float>(0) / p.at<float>(2), p.at<float>(1) / p.at<float>(2));
+}
+void points2pixelVector(vector<Eigen::Vector3d>& points, vector<cv::Point2f>& campoint,const cv::Mat K, const cv::Mat R, const cv::Mat t){
+    campoint.reserve(points.size());
+
+    for(size_t i = 0; i < points.size(); i++){
+        cv::Mat p = cv::Mat(3, 1, CV_32F);
+        p.at<float>(0) = points[i].x();
+        p.at<float>(1) = points[i].y();
+        p.at<float>(2) = points[i].z();
+        // cout << "p :" << p << endl;
+        campoint.push_back(point2pixel(p, K, R, t));
+    }
+
+}

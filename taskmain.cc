@@ -149,25 +149,43 @@ int main(int argc, char const *argv[])
 
     // drawMatchesRANSAC(undistortedImage1, keypoints1, undistortedImage2, keypoints2, matches, matchesRANSAC);
     cv::Mat R, t, essential_matrix;
-    solvePoseOpenCV(keypoints1, keypoints2, matchesRANSAC, newCameraMatrix, R, t, essential_matrix);
+    std::vector<cv::KeyPoint> keypoints1_inlier, keypoints2_inlier;
+    solvePoseOpenCV(keypoints1, keypoints2, keypoints1_inlier, keypoints2_inlier, 
+                        matchesRANSAC, newCameraMatrix, R, t, essential_matrix);
     
     // cv::imwrite(path + "1403637188088318976_undistortedImage.jpg", undistortedImage);
     // cv::imwrite(path + "1403637188088318976_undistortedImage1.jpg", undistortedImage1);
     // cv::imshow("undistortedImage", undistortedImage1);
     // cv::imshow("undistortedImage1", undistortedImage2);
     // cv::waitKey(0);
+    cv::Mat R0 = cv::Mat::eye(3,3, CV_32F);
+    cv::Mat t0 = cv::Mat::zeros(3,1, CV_32F);
     vector<Eigen::Vector3d> points;
-    triangulation(keypoints1, keypoints2, matchesRANSAC, newCameraMatrix, R, t, points);
+    triangulation(keypoints1_inlier, keypoints2_inlier, newCameraMatrix, R, t, points);
+    vector<cv::Point2f> uv1;
+    vector<cv::Point2f> uv2;
+    for ( int i = 0; i < ( int ) keypoints1_inlier.size(); i++ )
+    {
+        uv1.push_back (keypoints1_inlier[i].pt);
+        uv2.push_back (keypoints2_inlier[i].pt);
+    }
+    vector<cv::Point2f> reprojection_uv;
+    points2pixelVector(points, reprojection_uv, newCameraMatrix, R0, t0);
+    drawReprojection(undistortedImage1, uv1, reprojection_uv);
     vector<cv::Point2f> points1;
     vector<cv::Point2f> points2;
 
-    for ( int i = 0; i < ( int ) matches.size(); i++ )
+    for ( int i = 0; i < ( int ) keypoints1_inlier.size(); i++ )
     {
-        points1.push_back ( keypoints1[matches[i].queryIdx].pt );
-        points2.push_back ( keypoints2[matches[i].trainIdx].pt );
+        points1.push_back ( pixel2cam(keypoints1_inlier[i].pt, newCameraMatrix) );
+        points2.push_back ( pixel2cam(keypoints2_inlier[i].pt, newCameraMatrix) );
     }
-    cv::Mat R0 = cv::Mat::eye(3,3, CV_32F);
-    cv::Mat t0 = cv::Mat::zeros(3,1, CV_32F);
-    optimization(points1, points2, R0, t0, R, t);
+    reprojection_uv.clear();
+    optimization(points1, points2, points, R0, t0, R, t);
+    points2pixelVector(points, reprojection_uv, newCameraMatrix, R, t);
+
+
+    drawReprojection(undistortedImage2, uv2, reprojection_uv);
+
     return 0;
 }

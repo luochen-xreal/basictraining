@@ -56,13 +56,15 @@ src/utils.cc
 add_library(TESTLIB SHARED
 src/utils.cc
 src/extractandmatch.cc
+src/ceresBA.cc
 )
 target_link_libraries(TESTLIB 
 ${OpenCV_LIBS}
+${CERES_LIBRARIES}
 )
-add_executable(test 
-test.cc
-)
+# add_executable(test 
+# test.cc
+# )
 
 add_executable(eigentest
 EigenTest.cc
@@ -73,9 +75,9 @@ LinearSolver.cc
 )
 
 
-target_link_libraries(test 
-TESTLIB
-) 
+# target_link_libraries(test 
+# TESTLIB
+# ) 
 add_executable(main
 taskmain.cc 
 )
