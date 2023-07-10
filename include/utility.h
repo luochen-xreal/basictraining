@@ -7,7 +7,8 @@
  * you may not use this file except in compliance with the License.
  *******************************************************/
 
-#pragma once
+#ifndef UTILITY_H
+#define UTILITY_H
 
 #include <cmath>
 #include <cassert>
@@ -147,3 +148,6 @@ class Utility
             two_pi * std::floor((-angle_degrees + T(180)) / two_pi);
     };
 };
+
+
+#endif

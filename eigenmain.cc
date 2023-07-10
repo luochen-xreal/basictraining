@@ -127,13 +127,17 @@ int main(int argc, char const *argv[])
     featureMatchingRANSAC(undistortedImage1, undistortedImage2, keypoints1, keypoints2, matches, matchesRANSAC, featureCount, ransacThreshold);
 
     // drawMatchesRANSAC(undistortedImage1, keypoints1, undistortedImage2, keypoints2, matches, matchesRANSAC);
-    cv::Mat R, t, essential_matrix;
-    std::vector<cv::KeyPoint> keypoints1_inlier, keypoints2_inlier;
-    solvePoseOpenCV(keypoints1, keypoints2, keypoints1_inlier, keypoints2_inlier, 
-                        matchesRANSAC, newCameraMatrix, R, t, essential_matrix);
-    // solvePose(keypoints1, keypoints2, 
-    //                     matchesRANSAC, newCameraMatrix, R, t, essential_matrix);
+    Eigen::Matrix3f R;
+    Eigen::Vector3f t;
+    Eigen::Matrix3f essential_matrix;
     
+    std::vector<cv::KeyPoint> keypoints1_inlier, keypoints2_inlier;
+    // solvePoseOpenCV(keypoints1, keypoints2, keypoints1_inlier, keypoints2_inlier, 
+    //                     matchesRANSAC, newCameraMatrix, R, t, essential_matrix);
+    solvePose(keypoints1, keypoints2, keypoints1_inlier, keypoints2_inlier,
+                        matchesRANSAC, newCameraMatrix, R, t, essential_matrix);
+    cout << "R:" << R << endl;
+    cout << "t " << t << endl;
     cv::Mat R0 = cv::Mat::eye(3,3, CV_32F);
     cv::Mat t0 = cv::Mat::zeros(3,1, CV_32F);
     vector<Eigen::Vector3f> points;
@@ -141,10 +145,10 @@ int main(int argc, char const *argv[])
     
     vector<cv::Point2f> uv1;
     vector<cv::Point2f> uv2;
-    for ( int i = 0; i < ( int ) keypoints1_inlier.size(); i++ )
+    for ( int i = 0; i < ( int ) matchesRANSAC.size(); i++ )
     {
-        uv1.push_back (keypoints1_inlier[i].pt);
-        uv2.push_back (keypoints2_inlier[i].pt);
+        uv1.push_back (keypoints1[matchesRANSAC[i].queryIdx].pt);
+        uv2.push_back (keypoints2[matchesRANSAC[i].trainIdx].pt);
     }
     vector<cv::Point2f> reprojection_uv;
     points2pixelVector(points, reprojection_uv, newCameraMatrix, R0, t0);
@@ -158,8 +162,14 @@ int main(int argc, char const *argv[])
         points2.push_back ( pixel2cam(keypoints2_inlier[i].pt, newCameraMatrix) );
     }
     reprojection_uv.clear();
-    optimization(points1, points2, points, R0, t0, R, t);
-    points2pixelVector(points, reprojection_uv, newCameraMatrix, R, t);
+    cv::Mat R_cv, t_cv;
+
+    cv::eigen2cv(R, R_cv);
+    cv::eigen2cv(t, t_cv);
+    // cout << "R_cv" << endl << R_cv << endl;
+    // cout << "t_cv" << endl << t_cv << endl;
+    optimization(points1, points2, points, R0, t0, R_cv, t_cv);
+    points2pixelVector(points, reprojection_uv, newCameraMatrix, R_cv, t_cv);
     reprojectionErrorStatistics(reprojection_uv, uv2);
 
     drawReprojection(undistortedImage2, uv2, reprojection_uv);

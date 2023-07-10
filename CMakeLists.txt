@@ -57,6 +57,8 @@ add_library(TESTLIB SHARED
 src/utils.cc
 src/extractandmatch.cc
 src/ceresBA.cc
+src/triangulation.cc
+src/solvepose.cc
 )
 target_link_libraries(TESTLIB 
 ${OpenCV_LIBS}
@@ -74,7 +76,6 @@ add_executable(LinearSolver
 LinearSolver.cc
 )
 
-
 # target_link_libraries(test 
 # TESTLIB
 # ) 
@@ -84,7 +85,12 @@ taskmain.cc
 target_link_libraries(main
  TESTLIB 
 )
-
+add_executable(eigenmain
+eigenmain.cc 
+)
+target_link_libraries(eigenmain
+ TESTLIB 
+)
 add_executable(test1
 test1.cc
 )

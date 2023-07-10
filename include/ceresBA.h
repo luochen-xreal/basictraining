@@ -1,3 +1,6 @@
+#ifndef CERESBA_H
+#define CERESBA_H
+
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 #include <opencv2/opencv.hpp>
@@ -44,4 +47,20 @@ public:
     const double FOCAL_LENGTH = 458;
 };
 
-void optimization(const vector<cv::Point2f>& points1, const vector<cv::Point2f>& points2, vector<Eigen::Vector3d>& points, cv::Mat& R0, cv::Mat& t0, cv::Mat& R1, cv::Mat& t1);
+Eigen::Matrix3d axis2Matrix(Eigen::Vector3d &axis){
+    Eigen::AngleAxisd rv(axis.norm(), axis.normalized());
+    return rv.toRotationMatrix();
+}
+
+
+// class PoseLocalParameterization : public ceres::LocalParameterization
+// {
+//     virtual bool Plus(const double *x, const double *delta, double *x_plus_delta) const;
+//     virtual bool ComputeJacobian(const double *x, double *jacobian) const;
+//     virtual int GlobalSize() const { return 7; };
+//     virtual int LocalSize() const { return 6; };
+// };
+
+void optimization(const vector<cv::Point2f>& points1, const vector<cv::Point2f>& points2, vector<Eigen::Vector3f>& points, cv::Mat& R0, cv::Mat& t0, cv::Mat& R1, cv::Mat& t1);
+
+#endif
