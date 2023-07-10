@@ -41,6 +41,7 @@ public:
     void check(double **parameters);
     double observed_x;
     double observed_y;
+    const double FOCAL_LENGTH = 458;
 };
 
 void optimization(const vector<cv::Point2f>& points1, const vector<cv::Point2f>& points2, vector<Eigen::Vector3d>& points, cv::Mat& R0, cv::Mat& t0, cv::Mat& R1, cv::Mat& t1);

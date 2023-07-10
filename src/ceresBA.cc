@@ -134,7 +134,8 @@ bool ProjectionErrorFactor::Evaluate(const double *const *parameters, double *re
     Eigen::Vector3d axis(parameters[0][0], parameters[0][1], parameters[0][2]);
     Eigen::Vector3d t(parameters[0][3], parameters[0][4], parameters[0][5]);
     Eigen::Vector3d p(parameters[1][0], parameters[1][1], parameters[1][2]);
-   
+    // 信息矩阵开更
+    Eigen::Matrix2d sqrt_info = FOCAL_LENGTH / 1.5 * Eigen::Matrix2d::Identity();
     Eigen::AngleAxisd rv(axis.norm(), axis.normalized());
     double theta = axis.norm();
     Eigen::Vector3d a = axis.normalized();
@@ -145,21 +146,22 @@ bool ProjectionErrorFactor::Evaluate(const double *const *parameters, double *re
     Eigen::Map<Eigen::Vector2d> residual(residuals);
     residual(0) = observed_x - p_xy(0);
     residual(1) = observed_y - p_xy(1); 
-   
+    residual = sqrt_info * residual;
     Eigen::Matrix<double, 2, 3> jacobPc;
     jacobPc <<  1/ p_cam(2), 0, - p_cam(0)/(p_cam(2) * p_cam(2)),
                  0, 1 / p_cam(2), - p_cam(1)/(p_cam(2) * p_cam(2));
-    jacobPc = - jacobPc;
+    jacobPc = - sqrt_info * jacobPc;
     Eigen::Matrix<double, 3, 3> jacobXi;
     Eigen::Matrix3d Jl;
-    Jl = sin(theta) / theta * Eigen::Matrix3d::Identity() + (1 - sin(theta) / theta) * a * a.transpose() + (1 - cos(theta)) / theta * Utility::skewSymmetric(a);
+    Jl = sin(theta) / theta * Eigen::Matrix3d::Identity() + (1 - sin(theta) / theta) * a * a.transpose() 
+            + (1 - cos(theta)) / theta * Utility::skewSymmetric(a);
     jacobXi = - Utility::skewSymmetric(Rcw * p);
     Eigen::Matrix<double, 3, 3> jacobP = Rcw;
     if(jacobians){
         if(jacobians[0]){
             Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> jacobian_pose(jacobians[0]);
-            // jacobian_pose.block<2, 3>(0, 0) = jacobPc * jacobXi * Jl;
-            jacobian_pose.block<2, 3>(0, 0) = jacobPc * jacobXi;
+            jacobian_pose.block<2, 3>(0, 0) = jacobPc * jacobXi * Jl;
+            // jacobian_pose.block<2, 3>(0, 0) = jacobPc * jacobXi;
             jacobian_pose.block<2, 3>(0, 3) = jacobPc * Eigen::Matrix<double, 3, 3>::Identity();
         }
         if(jacobians[1]){

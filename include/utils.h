@@ -28,7 +28,7 @@ void drawReprojection(cv::Mat& img, std::vector<cv::Point2f> points1, std::vecto
     // 绘制第一组对应点
     cout << "points1.size = " << points1.size() << endl;
     for (const auto& point : points1) {
-        cv::circle(colorImage, point, 5, color1, cv::MARKER_CROSS);  // 绘制点
+        cv::circle(colorImage, point, 2, color1, cv::MARKER_CROSS);  // 绘制点
     }
     cv::Scalar color2(0, 0, 255);  // 连线和点的颜色
     // 绘制第二组对应点
