@@ -35,9 +35,10 @@ struct BAReprojectionError{
 
 struct ProjectionErrorFactor : public ceres::SizedCostFunction<2, 6, 3>
 {
-    public:
-    ProjectionErrorFactor(const double x, const double y) : observed_x(x), observed_y(y){}
-    virtual bool Evaluate(const double *const *parameters, double *residuals, double **jacobians);
+public:
+    ProjectionErrorFactor(const double x, const double y) : observed_x(x), observed_y(y){};
+    virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
+    void check(double **parameters);
     double observed_x;
     double observed_y;
 };
