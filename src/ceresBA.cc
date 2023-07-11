@@ -84,7 +84,7 @@ void optimization(const vector<cv::Point2f>& points1, const vector<cv::Point2f>&
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.minimizer_progress_to_stdout = true;
-    options.max_num_iterations = 40;
+    // options.max_num_iterations = 40;
     // options.check_gradients = true;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);

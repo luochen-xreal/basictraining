@@ -29,8 +29,9 @@ struct camera_param{
 void ReadParameter(camera_param& param, string yaml){
     
     cout << "yaml:" << yaml << endl;
-    cv::FileStorage fs(yaml, cv::FileStorage::READ);
     
+    cv::FileStorage fs(yaml, cv::FileStorage::READ);
+    cout << "hello" << endl;
     if (!fs.isOpened()) {
         std::cout << "无法打开YAML文件" << std::endl;
         return;
@@ -38,6 +39,7 @@ void ReadParameter(camera_param& param, string yaml){
     // 读取数据
     // fs["sensor_type"] >> param.sensorType;
     // fs["comment"] >> param.comment;
+    
     cv::Mat T;
     fs["T_BS"] >> T;
     // fs["rate_hz"] >> param.rateHz;
@@ -46,6 +48,7 @@ void ReadParameter(camera_param& param, string yaml){
     fs["intrinsics"] >> param.intrinsics;
     // fs["distortion_model"] >> param.distortionModel;
     fs["distortion_coefficients"] >> param.distortionCoefficients;
+    
     fs.release();
 }
 
@@ -93,8 +96,8 @@ int main(int argc, char const *argv[])
     /* code */
     camera_param param;
  
-    ReadParameter(param, "/home/xreal/xreal/two_image_pose_estimation/sensor.yaml");
-    string image_path("/home/xreal/xreal/two_image_pose_estimation/");
+    ReadParameter(param, "/home/xreal/xreal/project/two_image_pose_estimation/sensor.yaml");
+    string image_path("/home/xreal/xreal/project/two_image_pose_estimation/");
     cv::Mat image_1 = cv::imread(image_path + "1403637188088318976.png", cv::IMREAD_GRAYSCALE);
     cv::Mat image_2 = cv::imread(image_path + "1403637189138319104.png", cv::IMREAD_GRAYSCALE);
 
@@ -119,7 +122,7 @@ int main(int argc, char const *argv[])
     std::vector<cv::KeyPoint> keypoints1, keypoints2;
     std::vector<cv::DMatch> matches, matchesRANSAC;
 
-    string path = "/home/xreal/xreal/two_image_pose_estimation/";
+    string path = "/home/xreal/xreal/project/two_image_pose_estimation/";
     
     int featureCount = 1000;  // 特征点数量
     double ransacThreshold = 0.8;  // RANSAC阈值
