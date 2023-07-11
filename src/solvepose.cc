@@ -92,8 +92,8 @@ void solvePose(std::vector<cv::KeyPoint>& keypoints1,
     std::mt19937 gen(rd());
     const int kMaxIterations = 7;
     // 使用当前时间作为种子
-    std::time_t seed = std::time(nullptr);
-    gen.seed(seed);
+    // std::time_t seed = std::time(nullptr);
+    // gen.seed(seed);
     for(size_t i = 0; i < kMaxIterations; i++){
 
     }
@@ -229,14 +229,14 @@ int recoverPose(const Eigen::Matrix3f E,const std::vector<Eigen::Vector3f>& _poi
         double dist = 50.0;
         Eigen::Vector4f Q;
         Triangulate(P0, P1, points1, points2, Q);
-        bool mask1 = (Q(2, 0) * Q(3, 0)) > 0;
+        bool mask1 = (Q(2, 0) * Q(3, 0)) > 0;//深度是否为正
         Q(0, 0) /= Q(3, 0);
         Q(1, 0) /= Q(3, 0);
         Q(2, 0) /= Q(3, 0);
         Q(3, 0) /= Q(3, 0);
-        mask1 = ((Q(2, 0) < dist) && mask1);
+        mask1 = ((Q(2, 0) < dist) && mask1);  //是否超过最大深度
         Eigen::Vector3f Q_ = P1 * Q;
-        mask1 = (Q_(2, 0) > 0) && mask1;
+        mask1 = (Q_(2, 0) > 0) && mask1;      //另一相机坐标系下深度是否为正
         mask1 = (Q_(2, 0) < dist) && mask1;
         if(mask1) good1++;
         Triangulate(P0, P2, points1, points2, Q);

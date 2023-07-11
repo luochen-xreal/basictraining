@@ -44,7 +44,7 @@ void optimization(const vector<cv::Point2f>& points1, const vector<cv::Point2f>&
     // ceres::HuberLoss* loss_function = new ceres::HuberLoss(1);
     problem.AddParameterBlock(para_pose[0], 6);
     problem.AddParameterBlock(para_pose[1], 6);
-    if(1){
+    if(0){
         for(size_t j = 0; j < n; ++j){
             ceres::CostFunction* cost_function = BAReprojectionError::Create(static_cast<double>(points1[j].x), static_cast<double>(points1[j].y));
             problem.AddResidualBlock(cost_function,
@@ -84,6 +84,7 @@ void optimization(const vector<cv::Point2f>& points1, const vector<cv::Point2f>&
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.minimizer_progress_to_stdout = true;
+    options.max_num_iterations = 40;
     // options.check_gradients = true;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
@@ -116,6 +117,8 @@ void optimization(const vector<cv::Point2f>& points1, const vector<cv::Point2f>&
     cout << "t1 = " << endl << t1 << endl;
 
     std::cout << summary.FullReport() << "\n";
+    std::cout << "耗时：" << summary.total_time_in_seconds << "秒" << std::endl;
+
 }
 
 
