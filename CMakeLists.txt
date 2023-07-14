@@ -97,3 +97,10 @@ test1.cc
 target_link_libraries(test1
 ${OpenCV_LIBS}
 )
+
+add_executable(ffd
+ffd.cc 
+)
+target_link_libraries(ffd
+ TESTLIB 
+)
